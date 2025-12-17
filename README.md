@@ -1,5 +1,9 @@
 # Micro-Seismic & Structural Instability Detection System
 
+[![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3+-orange.svg)](https://scikit-learn.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A machine learning-based system for detecting micro-seismic activity and structural instability using sensor data. This project combines Random Forest classification and Isolation Forest anomaly detection to predict vibrations and compute a disaster risk index.
 
 ## 📋 Table of Contents
@@ -74,13 +78,15 @@ The system is designed for real-time monitoring of structural integrity and earl
 
 2. **Install required Python dependencies**:
    ```bash
-   pip install pandas numpy scikit-learn
+   pip install -r requirements.txt
    ```
    
    Or using `py` on Windows:
    ```bash
-   py -m pip install pandas numpy scikit-learn
+   py -m pip install -r requirements.txt
    ```
+   
+   This will install: pandas, numpy, scikit-learn, matplotlib, seaborn
 
 3. **Hardware Setup (Optional)**:
    - Upload `NUS_proj.ino` to your ESP32/Arduino board
@@ -114,6 +120,18 @@ Or on Windows:
 py micro_seismic_model.py
 ```
 
+### Visualization
+
+Generate visualizations and analysis plots:
+
+```bash
+python visualize_results.py
+```
+
+This will create:
+- `analysis_results.png` - Comprehensive analysis dashboard
+- `risk_index_timeline.png` - Risk index over time visualization
+
 ### Data Format
 
 The script expects a CSV file named `micro_seismic_data.csv` with the following columns:
@@ -146,10 +164,15 @@ print(f"Vibration detected: {prediction}")  # Returns 0 or 1
 NUS-PROJECT/
 │
 ├── micro_seismic_model.py           # Main ML pipeline script
+├── visualize_results.py              # Data visualization and analysis
 ├── micro_seismic_data.csv           # Input sensor data
 ├── micro_seismic_data_augmented.csv # Augmented dataset (if available)
 ├── NUS_proj.ino                     # Arduino code for sensor data collection
-└── README.md                         # Project documentation
+├── requirements.txt                 # Python dependencies
+├── .gitignore                       # Git ignore rules
+├── LICENSE                          # MIT License
+├── CONTRIBUTING.md                  # Contribution guidelines
+└── README.md                        # Project documentation
 ```
 
 ## 🧠 Model Details
@@ -233,6 +256,9 @@ FINAL OUTPUT WITH RISK INDEX
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+Quick steps:
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
@@ -241,7 +267,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## 📝 License
 
-This project is open source. Please refer to the repository for license details.
+This project is open source and available under the [MIT License](LICENSE).
 
 ## 👥 Authors
 
