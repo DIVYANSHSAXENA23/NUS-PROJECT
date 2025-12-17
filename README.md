@@ -16,6 +16,7 @@ A machine learning-based system for detecting micro-seismic activity and structu
 - [Project Structure](#project-structure)
 - [Model Details](#model-details)
 - [Output](#output)
+- [Hardware-Software Integration](#hardware-software-integration)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -26,7 +27,7 @@ This project analyzes sensor data (magnetometer readings, distance measurements,
 - **Detect anomalies** in sensor readings using Isolation Forest
 - **Compute a disaster risk index** (0-100) based on multiple factors
 
-The system is designed for real-time monitoring of structural integrity and early warning of potential structural failures.
+The system is designed for **real-time monitoring** of structural integrity and early warning of potential structural failures. It integrates Arduino/ESP32 hardware with Python ML software for live predictions.
 
 ## ✨ Features
 
@@ -132,6 +133,29 @@ This will create:
 - `analysis_results.png` - Comprehensive analysis dashboard
 - `risk_index_timeline.png` - Risk index over time visualization
 
+### Real-Time Hardware Integration
+
+**Step 1: Train and save the model** (run once):
+```bash
+python train_and_save_model.py
+```
+
+**Step 2: Connect Arduino/ESP32 and start monitoring**:
+```bash
+# Windows
+python real_time_monitor.py --port COM3
+
+# Linux/Mac
+python real_time_monitor.py --port /dev/ttyUSB0
+```
+
+**With data logging:**
+```bash
+python real_time_monitor.py --port COM3 --save
+```
+
+See [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for detailed setup instructions.
+
 ### Data Format
 
 The script expects a CSV file named `micro_seismic_data.csv` with the following columns:
@@ -163,15 +187,18 @@ print(f"Vibration detected: {prediction}")  # Returns 0 or 1
 ```
 NUS-PROJECT/
 │
-├── micro_seismic_model.py           # Main ML pipeline script
-├── visualize_results.py              # Data visualization and analysis
+├── micro_seismic_model.py           # Main ML pipeline script (training)
+├── train_and_save_model.py          # Train and save models for real-time use
+├── real_time_monitor.py             # Real-time hardware-software integration
+├── visualize_results.py             # Data visualization and analysis
 ├── micro_seismic_data.csv           # Input sensor data
 ├── micro_seismic_data_augmented.csv # Augmented dataset (if available)
-├── NUS_proj.ino                     # Arduino code for sensor data collection
+├── NUS_proj.ino                     # Arduino/ESP32 firmware for sensors
 ├── requirements.txt                 # Python dependencies
 ├── .gitignore                       # Git ignore rules
 ├── LICENSE                          # MIT License
 ├── CONTRIBUTING.md                  # Contribution guidelines
+├── INTEGRATION_GUIDE.md             # Hardware-software integration guide
 └── README.md                        # Project documentation
 ```
 
@@ -251,6 +278,62 @@ FINAL OUTPUT WITH RISK INDEX
 1        584          0     -1.00    1504.697976             1           0
 ...
 ```
+
+## 🔌 Hardware-Software Integration
+
+This project includes **complete hardware-software integration** for real-time monitoring:
+
+### Architecture
+```
+Arduino/ESP32 → Serial/USB → Python ML → Real-time Predictions
+```
+
+### Quick Start
+
+1. **Upload firmware** to your Arduino/ESP32:
+   - Open `NUS_proj.ino` in Arduino IDE
+   - Upload to your board
+
+2. **Train the model** (one-time setup):
+   ```bash
+   python train_and_save_model.py
+   ```
+
+3. **Start real-time monitoring**:
+   ```bash
+   python real_time_monitor.py --port COM3  # Windows
+   python real_time_monitor.py --port /dev/ttyUSB0  # Linux/Mac
+   ```
+
+### Features
+
+- ✅ **Real-time sensor data reading** from Arduino/ESP32
+- ✅ **Live ML predictions** using trained models
+- ✅ **Risk index calculation** with color-coded alerts
+- ✅ **Data logging** option for later analysis
+- ✅ **Automatic feature engineering** from raw sensor data
+
+### Output Example
+
+```
+======================================================================
+⏰ Time: 2025-01-15 14:30:25
+----------------------------------------------------------------------
+📊 Sensor Readings:
+   Distance: 57.22 cm
+   Magnetometer: X=-42, Y=-158, Z=1498
+   Magnitude: 1506.89
+   Vibration: 0 (Raw)
+----------------------------------------------------------------------
+🤖 ML Predictions:
+   Vibration Detected: NO
+   Anomaly: NO
+----------------------------------------------------------------------
+🟢 Risk Index: 25/100 - LOW
+======================================================================
+```
+
+For detailed setup instructions, troubleshooting, and advanced usage, see [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md).
 
 ## 🤝 Contributing
 
