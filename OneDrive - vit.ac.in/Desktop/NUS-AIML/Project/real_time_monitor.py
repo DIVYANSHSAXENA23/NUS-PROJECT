@@ -14,10 +14,12 @@ MODEL_PATH = "rf_model.pkl"
 MAG_BASELINE = 1500.0
 
 # Risk weighting constants (0–100 overall)
-SEISMIC_MAX_RISK = 40.0   # ML-based seismic risk (Random Forest probability)
-MOVEMENT_MAX_RISK = 20.0  # sudden distance change / collapse
-PROXIMITY_MAX_RISK = 30.0 # persistent close obstacle / blocked path
-MAG_MAX_RISK = 10.0       # magnetic disturbance
+VIBRATION_SENSOR_RISK = 40.0  # Hardware vibration sensor override (highest priority)
+ML_MAX_RISK = 30.0            # ML-based seismic risk (Random Forest probability)
+DISTANCE_PROXIMITY_RISK_CRITICAL = 30.0  # Distance < 10 cm (object fall/collapse)
+DISTANCE_PROXIMITY_RISK_HIGH = 15.0      # Distance < 25 cm (close obstacle)
+MOVEMENT_MAX_RISK = 20.0      # Sudden distance change (>5 cm)
+MAG_MAX_RISK = 10.0           # Magnetic disturbance
 
 
 def load_model(model_path: str = MODEL_PATH):
@@ -104,66 +106,73 @@ def main():
                 }]
             )
 
+            # ===============================================================
+            # SENSOR-FUSION BASED HAZARD SCORING
+            # ===============================================================
+            # Priority order: Vibration sensor > ML > Distance > Movement > Magnetic
+            
             # -------------------------------------------------------
-            # 1) SEISMIC COMPONENT (ML-based)
+            # 1) VIBRATION SENSOR OVERRIDE (HIGHEST PRIORITY)
+            # -------------------------------------------------------
+            # Hardware vibration sensor is ground truth - if it triggers,
+            # immediately add risk regardless of ML prediction.
+            vibration_sensor_risk = 0.0
+            if vibration_raw == 1:
+                vibration_sensor_risk = VIBRATION_SENSOR_RISK  # 40 points
+
+            # -------------------------------------------------------
+            # 2) ML CONTRIBUTION (Probabilistic, not binary)
             # -------------------------------------------------------
             # Use Random Forest probability of vibration (0–1)
+            # This is INDEPENDENT of vibration_raw - ML learns from features only
             prob_1 = float(model.predict_proba(X_df)[0][1])
-
-            # Map probability linearly to a 0–SEISMIC_MAX_RISK band
-            seismic_risk = SEISMIC_MAX_RISK * prob_1
-
-            # -------------------------------------------------------
-            # 2) SUDDEN MOVEMENT COMPONENT (distance_change)
-            # -------------------------------------------------------
-            # Large |distance_change| suggests a collapse / sudden shift.
-            # Ignore small noise within +/- 1 cm.
-            movement_epsilon = 1.0  # cm
-            movement_scale = 1.5    # risk points per cm beyond epsilon
-
-            movement_delta = max(0.0, abs(distance_change) - movement_epsilon)
-            movement_risk = min(MOVEMENT_MAX_RISK, movement_scale * movement_delta)
+            
+            # Map probability linearly to 0–30 risk points
+            ml_risk = int(30 * prob_1)
 
             # -------------------------------------------------------
-            # 3) PROXIMITY COMPONENT (absolute distance)
+            # 3) DISTANCE-BASED HAZARD (Object fall / collapse proximity)
             # -------------------------------------------------------
-            # Even if movement stops (distance_change -> 0),
-            # a persistently small distance indicates a blocked path
-            # or fallen object near the sensor.
-            # This is INDEPENDENT of movement - it's about current position.
-            if distance <= 0 or distance > 200:  # Invalid readings
-                proximity_risk = 0.0
-            elif distance <= 5.0:
-                # Critical: almost touching sensor/structure (fallen object)
-                proximity_risk = PROXIMITY_MAX_RISK  # 30 points
-            elif distance <= 15.0:
-                # High: very close obstacle
-                proximity_risk = 20.0  # Fixed 20 points
-            elif distance <= 30.0:
-                # Moderate: nearby but not immediate
-                proximity_risk = 10.0  # Fixed 10 points
-            else:
-                # Safe: good clearance (>30 cm)
-                proximity_risk = 0.0
+            # Persistent close distance indicates fallen object or collapse,
+            # independent of movement. This ensures risk stays high even
+            # when object becomes stationary.
+            distance_proximity_risk = 0.0
+            if distance > 0 and distance <= 200:  # Valid readings only
+                if distance < 10.0:
+                    # Critical: object very close (likely fallen/collapsed)
+                    distance_proximity_risk = DISTANCE_PROXIMITY_RISK_CRITICAL  # 30 points
+                elif distance < 25.0:
+                    # High: close obstacle
+                    distance_proximity_risk = DISTANCE_PROXIMITY_RISK_HIGH  # 15 points
 
             # -------------------------------------------------------
-            # 4) MAGNETIC DISTURBANCE COMPONENT (mag_magnitude)
+            # 4) DISTANCE CHANGE (Structural movement)
             # -------------------------------------------------------
-            # Compare current magnitude to a baseline from training.
-            # Higher than baseline by a margin contributes up to MAG_MAX_RISK.
-            mag_excess = max(0.0, mag_magnitude - MAG_BASELINE)
-            if mag_excess > 100.0:
-                magnetic_risk = MAG_MAX_RISK
-            elif mag_excess > 50.0:
-                magnetic_risk = MAG_MAX_RISK / 2.0
-            else:
-                magnetic_risk = 0.0
+            # Large sudden distance changes indicate structural movement/collapse
+            movement_risk = 0.0
+            if abs(distance_change) > 5.0:  # Threshold: 5 cm
+                movement_risk = MOVEMENT_MAX_RISK  # 20 points
+
+            # -------------------------------------------------------
+            # 5) MAGNETOMETER INSTABILITY
+            # -------------------------------------------------------
+            # High magnetometer magnitude indicates magnetic disturbance
+            # or structural instability affecting sensor orientation
+            magnetic_risk = 0.0
+            if mag_magnitude > MAG_BASELINE:
+                magnetic_risk = MAG_MAX_RISK  # 10 points
 
             # -------------------------------------------------------
             # COMBINE ALL COMPONENTS INTO 0–100 RISK INDEX
             # -------------------------------------------------------
-            total_risk = seismic_risk + movement_risk + proximity_risk + magnetic_risk
-            total_risk = int(min(100.0, total_risk))
+            total_risk = (
+                vibration_sensor_risk +
+                ml_risk +
+                distance_proximity_risk +
+                movement_risk +
+                magnetic_risk
+            )
+            total_risk = int(min(100.0, total_risk))  # Cap at 100
 
             # ---- Output for demo / debugging ----
             timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -181,9 +190,10 @@ def main():
             print(f"  Vibration probability: {prob_1:.2f}")
             print("-" * 70)
             print("Risk Components:")
-            print(f"  Seismic (ML)     : {seismic_risk:.1f}/{SEISMIC_MAX_RISK}")
-            print(f"  Movement         : {movement_risk:.1f}/{MOVEMENT_MAX_RISK}")
-            print(f"  Proximity        : {proximity_risk:.1f}/{PROXIMITY_MAX_RISK}")
+            print(f"  Vibration Sensor : {vibration_sensor_risk:.1f}/{VIBRATION_SENSOR_RISK} (hardware override)")
+            print(f"  ML Probability   : {ml_risk}/{ML_MAX_RISK} (prob={prob_1:.2f})")
+            print(f"  Distance Proximity: {distance_proximity_risk:.1f} (dist={distance:.2f} cm)")
+            print(f"  Movement         : {movement_risk:.1f}/{MOVEMENT_MAX_RISK} (change={distance_change:.2f} cm)")
             print(f"  Magnetic         : {magnetic_risk:.1f}/{MAG_MAX_RISK}")
             print("-" * 70)
             print(f"TOTAL RISK INDEX   : {total_risk}/100")
