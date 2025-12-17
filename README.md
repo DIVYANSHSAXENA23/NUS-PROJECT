@@ -41,6 +41,7 @@ The system is designed for real-time monitoring of structural integrity and earl
 
 ## 🛠️ Technologies Used
 
+### Software
 - **Python 3.x**
 - **pandas** - Data manipulation and analysis
 - **numpy** - Numerical computations
@@ -50,7 +51,20 @@ The system is designed for real-time monitoring of structural integrity and earl
   - train_test_split
   - accuracy_score, confusion_matrix, classification_report
 
+### Hardware & Firmware
+- **Arduino/ESP32** - Microcontroller for sensor data collection
+- **QMC5883L** - 3-axis magnetometer sensor
+- **HC-SR04** - Ultrasonic distance sensor
+- **Vibration Sensor** - Digital vibration detector
+
 ## 📦 Installation
+
+### Prerequisites
+
+- Python 3.x installed on your system
+- (Optional) Arduino IDE if you want to use the sensor data collection code
+
+### Setup
 
 1. **Clone the repository**:
    ```bash
@@ -58,7 +72,7 @@ The system is designed for real-time monitoring of structural integrity and earl
    cd NUS-PROJECT
    ```
 
-2. **Install required dependencies**:
+2. **Install required Python dependencies**:
    ```bash
    pip install pandas numpy scikit-learn
    ```
@@ -68,7 +82,24 @@ The system is designed for real-time monitoring of structural integrity and earl
    py -m pip install pandas numpy scikit-learn
    ```
 
+3. **Hardware Setup (Optional)**:
+   - Upload `NUS_proj.ino` to your ESP32/Arduino board
+   - Connect sensors as per pin definitions in the code:
+     - Vibration sensor → Pin 34
+     - Ultrasonic sensor → Trig: Pin 26, Echo: Pin 27
+     - QMC5883L magnetometer → I2C (SDA: Pin 21, SCL: Pin 22)
+   - Open Serial Monitor at 115200 baud to collect data
+
 ## 🚀 Usage
+
+### Data Collection (Hardware)
+
+If you want to collect your own sensor data:
+
+1. Upload `NUS_proj.ino` to your ESP32/Arduino board using Arduino IDE
+2. Connect the sensors as specified in the code
+3. Open Serial Monitor (115200 baud) to view CSV output
+4. Copy the serial output and save it as `micro_seismic_data.csv`
 
 ### Running the Model
 
@@ -93,12 +124,11 @@ The script expects a CSV file named `micro_seismic_data.csv` with the following 
 
 ### Live Prediction
 
-The script includes a function for real-time predictions:
+The script includes a function for real-time predictions. **Note**: The model must be trained first by running the full script. After training, you can use the `predict_vibration()` function:
 
 ```python
-from micro_seismic_model import predict_vibration
-
-# Example usage
+# The function is defined in the script and uses the trained rf_model
+# Example usage (after running the script):
 prediction = predict_vibration(
     distance=50.0,
     mag_x=-42,
@@ -107,7 +137,7 @@ prediction = predict_vibration(
     vibration_freq=0.2
 )
 
-print(f"Vibration detected: {prediction}")  # 0 or 1
+print(f"Vibration detected: {prediction}")  # Returns 0 or 1
 ```
 
 ## 📁 Project Structure
@@ -115,9 +145,11 @@ print(f"Vibration detected: {prediction}")  # 0 or 1
 ```
 NUS-PROJECT/
 │
-├── micro_seismic_model.py      # Main ML pipeline script
-├── micro_seismic_data.csv      # Input sensor data
-└── README.md                   # Project documentation
+├── micro_seismic_model.py           # Main ML pipeline script
+├── micro_seismic_data.csv           # Input sensor data
+├── micro_seismic_data_augmented.csv # Augmented dataset (if available)
+├── NUS_proj.ino                     # Arduino code for sensor data collection
+└── README.md                         # Project documentation
 ```
 
 ## 🧠 Model Details
@@ -209,7 +241,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## 📝 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is open source. Please refer to the repository for license details.
 
 ## 👥 Authors
 
