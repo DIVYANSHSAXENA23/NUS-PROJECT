@@ -211,10 +211,16 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 This project is open source and available under the [MIT License](LICENSE).
 
-## 👤 Author
+## 👥 Authors
 
 **Divyansh Saxena**
 - GitHub: [@DIVYANSHSAXENA23](https://github.com/DIVYANSHSAXENA23)
+
+**Keshav Kaushish**
+- GitHub: [@keshavkaushish25-debug](https://github.com/keshavkaushish25-debug)
+
+**Ssanvee Vijay**
+- GitHub: [@SsanveeVijay](https://github.com/SsanveeVijay)
 
 ## 🙏 Acknowledgments
 
