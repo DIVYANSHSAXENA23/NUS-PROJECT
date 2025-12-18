@@ -10,8 +10,8 @@ __pycache__/
 *.h5
 *.model
 
-# Data files (optional - uncomment if you don't want to track CSV)
-# *.csv
+# Data files (large CSV files - users should generate their own)
+*.csv
 
 # IDE
 .vscode/
@@ -35,4 +35,8 @@ ENV/
 
 # Logs
 *.log
+
+# OneDrive paths (ignore parent directory structure)
+OneDrive*/
+
 
